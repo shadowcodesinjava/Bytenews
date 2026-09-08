@@ -1,0 +1,196 @@
+/* ===== CSS Variables ===== */
+:root {
+  --bg-light: #f3f4f6;
+  --text-light: #333;
+  --primary: #3b82f6;
+  --primary-dark: #1e3a8a;
+  --container-bg: #fff;
+  --sidebar-border: #e5e7eb;
+  --summary-bg: #eef2ff;
+  --summary-border: #3b82f6;
+  --scrollbar-bg: #f3f4f6;
+  --scrollbar-thumb: #ccc;
+}
+
+body.dark-mode {
+  --bg-light: #1a1a1a;
+  --text-light: #f5f5f5;
+  --primary: #2563eb;
+  --primary-dark: #60a5fa;
+  --container-bg: #1e1e1e;
+  --sidebar-border: #333;
+  --summary-bg: #333;
+  --summary-border: #60a5fa;
+  --scrollbar-bg: #1e1e1e;
+  --scrollbar-thumb: #333;
+}
+
+/* ===== Reset and Base Styles ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg-light);
+  color: var(--text-light);
+  height: 100%;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ===== Header ===== */
+.header {
+  background: linear-gradient(to right, var(--primary-dark), var(--primary));
+  padding: 20px 32px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* ===== Layout ===== */
+.container {
+  display: flex;
+  height: calc(100vh - 72px);
+  background: var(--bg-light);
+}
+
+/* ===== Sidebar ===== */
+.categories {
+  width: 250px;
+  background: var(--container-bg);
+  padding: 24px;
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.02);
+}
+
+.categories h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.categories ul {
+  list-style: none;
+}
+
+.categories ul li {
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.2s ease;
+}
+
+.categories ul li:hover {
+  background: #e0ecff;
+  color: var(--primary-dark);
+  font-weight: 500;
+}
+
+/* ===== News Area ===== */
+.full-news {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  background: var(--container-bg);
+}
+
+#news-container {
+  animation: fadeIn 0.4s ease-in-out;
+  background: var(--container-bg);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+#news-container h2 {
+  font-size: 24px;
+  color: var(--primary-dark);
+  margin-bottom: 12px;
+}
+
+#news-container p {
+  font-size: 16px;
+  color: #4b5563;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.read-more-btn {
+  display: inline-block;
+  margin-top: 8px;
+  background: var(--primary);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+
+.read-more-btn:hover {
+  background: var(--primary-dark);
+}
+
+/* ===== Summary Box ===== */
+.summary-box {
+  background: var(--summary-bg);
+  border-left: 4px solid var(--summary-border);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+/* ===== Top Bar ===== */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 32px;
+  background: var(--container-bg);
+}
+
+.top-bar input {
+  width: 60%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: var(--container-bg);
+  color: var(--text-light);
+}
+
+.top-bar button {
+  padding: 8px 14px;
+  border: none;
+  background: var(--primary-dark);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.top-bar button:hover {
+  background: var(--primary);
+}
+
+/* ===== Scrollbar Styling ===== */
+::-webkit-scrollbar {
+  background: var(--scrollbar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+/* ===== Optional: Smooth Mode Switch ===== */
+body, .container, .categories, .full-news, #news-container, .top-bar, .summary-box {
+  transition: background 0.3s, color 0.3s;
+}

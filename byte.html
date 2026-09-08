@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Byte News</title>
+  <link rel="stylesheet" href="byte.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">📰 BYTE NEWS</div>
+  </header>
+
+  <!-- Search and Toggle -->
+  <div class="top-bar">
+    <input type="text" id="searchInput" placeholder="Search news..." />
+    <button onclick="toggleDarkMode()">🌓 Toggle Dark Mode</button>
+  </div>
+
+  <!-- Container -->
+  <div class="container">
+    <!-- Sidebar with categories -->
+    <aside class="categories">
+      <h2>Categories</h2>
+      <ul>
+        <li onclick="loadCategory('trending')">🔥 Trending</li>
+        <li onclick="loadCategory('summary')">📝 Summary</li>
+        <li onclick="loadCategory('tech')">💻 Technology</li>
+        <li onclick="loadCategory('gaming')">🎮 Gaming</li>
+        <li onclick="loadCategory('science')">🔬 Science</li>
+        <li onclick="loadCategory('space')">🚀 Space</li>
+        <li onclick="loadCategory('world')">🌍 World</li>
+        <li onclick="loadCategory('health')">💊 Health</li>
+        <li onclick="loadCategory('politics')">🏛️ Politics</li> 
+      </ul>
+    </aside>
+
+    <!-- News Content -->
+    <main class="full-news">
+      <div id="loader" style="display:none; text-align:center; padding: 20px;">
+        <p>Loading...</p>
+      </div>
+      <div id="news-container">
+        <h2>Welcome to Byte News</h2>
+        <p>Select a category from the left to view the latest stories.</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="byte_with_backend.js"></script>
+
+</body>
+</html>

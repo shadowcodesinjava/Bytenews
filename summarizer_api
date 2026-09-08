@@ -1,0 +1,164 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import requests
+import torch
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import logging
+
+# Initialize Flask app
+app = Flask(__name__)
+CORS(app)
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Load BART model directly at startup
+logger.info("Loading BART summarizer model...")
+model_name = "facebook/bart-large-cnn"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+summarizer_model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+logger.info("Model loaded successfully.")
+
+# Categories and comprehensive keyword dictionary
+CATEGORIES = ['tech', 'gaming', 'science', 'space', 'world', 'health', 'politics']
+
+CATEGORY_KEYWORDS = {
+    'tech': ['technology', 'software', 'hardware', 'ai', 'machine learning', 'gadget', 'tech', 'app', 'computer', 'digital', 'apple', 'google', 'microsoft', 'chip'],
+    'gaming': ['game', 'gaming', 'esports', 'playstation', 'xbox', 'nintendo', 'steam', 'gamer', 'console', 'gta', 'zelda', 'ps5', 'unreal engine', 'twitch', 'fortnite', 'roblox'],
+    'science': ['science', 'experiment', 'discovery', 'biology', 'chemistry', 'physics', 'research', 'scientist', 'genome', 'fossil', 'quantum'],
+    'space': ['space', 'nasa', 'rocket', 'astronomy', 'mars', 'satellite', 'orbit', 'astronaut', 'cosmos', 'moon', 'isro', 'spacex', 'telescope'],
+    'world': ['global', 'international', 'world', 'country', 'conflict', 'war', 'nation', 'summit', 'diplomacy', 'un', 'foreign'],
+    'health': ['health', 'medicine', 'doctor', 'hospital', 'surgery', 'mental', 'vaccine', 'pandemic', 'covid', 'fitness', 'medical', 'cancer', 'diet', 'study', 'disease', 'patient', 'treatment', 'fda', 'wellness', 'drug', 'care', 'risk', 'heart', 'brain', 'body'],
+    'politics': ['politics', 'election', 'government', 'minister', 'policy', 'parliament', 'president', 'senate', 'vote', 'law', 'congress', 'court', 'state', 'bill', 'party', 'campaign', 'governor', 'candidate', 'official', 'house', 'voter', 'democrat', 'republican', 'trump', 'biden', 'harris'],
+}
+
+GNEWS_API_KEY = "69fb6f4fcf23465cf0aafa6559302e3c"
+
+FALLBACK_ARTICLES = [
+    {
+        "title": "New Next-Gen Game Engine Update Revolutionizes Real-Time Graphics",
+        "description": "Game developers unveil breakthroughs in physics rendering and lighting systems for upcoming major releases.",
+        "url": "https://example.com",
+        "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600",
+        "source": {"name": "Gaming Hub"}
+    },
+    {
+        "title": "Artificial Intelligence Breakthrough Advances Next-Gen Computing",
+        "description": "Researchers have announced a landmark achievement in machine learning algorithms, promising faster processing for complex datasets.",
+        "url": "https://example.com",
+        "image": "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600",
+        "source": {"name": "Tech Daily"}
+    },
+    {
+        "title": "Global Health Summit Focuses on New Preventive Care Guidelines",
+        "description": "Medical researchers gather to discuss preventative measures and regional wellness developments.",
+        "url": "https://example.com",
+        "image": "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=600",
+        "source": {"name": "Health Weekly"}
+    }
+]
+
+@app.route("/summarize", methods=["POST"])
+def summarize_article():
+    data = request.get_json(silent=True) or {}
+    content = data.get("content", "")
+
+    if not content:
+        return jsonify({"error": "No content provided"}), 400
+
+    try:
+        content = content.strip().replace("\n", " ")
+        words = content.split()
+        if len(words) > 150:
+            content = " ".join(words[:150])
+
+        inputs = tokenizer(content, max_length=512, truncation=True, return_tensors="pt")
+        
+        # Fast greedy search parameters for high-speed CPU generation
+        summary_ids = summarizer_model.generate(
+            inputs["input_ids"], 
+            num_beams=1, 
+            max_new_tokens=45, 
+            min_length=20, 
+            early_stopping=True
+        )
+        summary_text = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+        return jsonify({"summary": summary_text})
+    except Exception as e:
+        logger.error("Error during summarization: %s", e)
+        return jsonify({"summary": content[:120] + "..."})
+
+
+@app.route("/news", methods=["GET"])
+def fetch_news():
+    category = request.args.get("category", "general").lower()
+    page = request.args.get("page", 1, type=int)
+
+    valid_gnews_topics = ['general', 'world', 'nation', 'business', 'technology', 'entertainment', 'sports', 'science', 'health']
+
+    try:
+        if category in ['gaming', 'space', 'health', 'politics']:
+            search_terms = {
+                'gaming': 'video games OR gaming OR esports OR playstation OR xbox OR nintendo',
+                'space': 'nasa OR space OR rocket OR astronomy OR spacex',
+                'health': 'health OR medicine OR medical OR doctor OR hospital OR disease OR treatment',
+                'politics': 'politics OR election OR government OR minister OR president OR policy OR congress'
+            }
+            query = search_terms.get(category, category)
+            url = f"https://gnews.io/api/v4/search?token={GNEWS_API_KEY}&lang=en&q={query}&max=10&page={page}"
+        else:
+            api_topic = 'technology' if category == 'tech' else (category if category in valid_gnews_topics else 'general')
+            url = f"https://gnews.io/api/v4/top-headlines?token={GNEWS_API_KEY}&lang=en&topic={api_topic}&max=10&page={page}"
+
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        return jsonify(response.json())
+    except Exception as e:
+        logger.error("GNews API error on /news: %s", e)
+        return jsonify({"articles": FALLBACK_ARTICLES})
+
+
+@app.route("/search", methods=["GET"])
+def search_news():
+    query = request.args.get("query", "")
+    page = request.args.get("page", 1, type=int)
+
+    if not query:
+        return jsonify({"error": "No search query provided"}), 400
+
+    try:
+        url = f"https://gnews.io/api/v4/search?token={GNEWS_API_KEY}&lang=en&q={query}&max=10&page={page}"
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        return jsonify(response.json())
+    except Exception as e:
+        logger.error("GNews API error on /search: %s", e)
+        return jsonify({"articles": FALLBACK_ARTICLES})
+
+
+@app.route("/filter", methods=["POST"])
+def filter_articles():
+    data = request.get_json(silent=True) or {}
+    category = data.get('category', '').lower()
+    articles = data.get('articles', [])
+
+    if not articles or category not in CATEGORIES:
+        return jsonify({"articles": []})
+
+    keywords = CATEGORY_KEYWORDS.get(category, [])
+    filtered = []
+
+    for article in articles:
+        title = article.get('title') or ''
+        description = article.get('description') or ''
+        content = f"{title}. {description}".lower()
+
+        if any(keyword in content for keyword in keywords):
+            filtered.append(article)
+
+    return jsonify({'articles': filtered if filtered else articles})
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
